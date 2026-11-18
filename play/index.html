@@ -11079,7 +11079,10 @@
         if (modal === "restart")
           return "Restart this mission with a new supply of pearls and a score of zero.";
         if (modal === "seed")
-          return "Enter a number from zero to 4,294,967,295. The same seed and mission produce the same targets.";
+          return (
+            (seedEntry ? "Seed " + seedEntry + ". " : "Empty seed. ") +
+            "Type or paste a number from zero to 4,294,967,295. The same seed and mission produce the same targets."
+          );
         if (modal === "encore")
           return "Replay of the last shot. Use Space to play or pause, arrows to seek and Escape to return.";
         if (screen === "play")
@@ -11146,6 +11149,7 @@
         const sceneKey = [
           screen,
           modal,
+          modal === "seed" ? seedEntry : "",
           mode,
           chosen,
           hero,
@@ -11240,6 +11244,7 @@
                     results: "next",
                     pause: "resume",
                     receipt: "closeReceipt",
+                    seed: "seedApply",
                     power: "close",
                     guide: "guideClose",
                   }[modal],
@@ -11598,6 +11603,21 @@
         },
         { passive: false },
       );
+      function focusSeedApply() {
+        render();
+        document
+          .querySelector('[data-action="seedApply"]')
+          ?.focus({ preventScroll: true });
+      }
+      window.addEventListener("paste", (e) => {
+        if (modal !== "seed") return;
+        const digits = e.clipboardData?.getData("text/plain").trim();
+        if (!/^\d{1,10}$/.test(digits || "")) return;
+        e.preventDefault();
+        seedEntry = digits;
+        seedSelected = false;
+        focusSeedApply();
+      });
       window.addEventListener("keydown", (e) => {
         keyboardIntent = true;
         if (e.key === "Tab" && modal) {
@@ -11664,13 +11684,18 @@
         }
         if (
           modal === "seed" &&
-          document.activeElement?.tagName !== "BUTTON" &&
+          !e.ctrlKey &&
+          !e.altKey &&
+          !e.metaKey &&
           (/^[0-9]$/.test(e.key) ||
-            ["Backspace", "Enter", "Escape"].includes(e.key))
+            e.key === "Backspace" ||
+            e.key === "Escape" ||
+            (e.key === "Enter" && document.activeElement?.tagName !== "BUTTON"))
         ) {
           e.preventDefault();
           seedKey(e.key);
-          render();
+          if (modal === "seed") focusSeedApply();
+          else render();
           return;
         }
         if (

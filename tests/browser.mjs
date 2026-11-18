@@ -113,8 +113,17 @@ async function viewport(width, height, mobile = false) {
   });
 }
 async function key(key, code) {
-  for (const type of ["keyDown", "keyUp"])
-    await command("Input.dispatchKeyEvent", { type, key, code });
+  const virtualKey =
+    { Enter: 13, Escape: 27 }[key] ?? key.toUpperCase().charCodeAt(0);
+  const text = key === "Enter" ? "\r" : key.length === 1 ? key : "";
+  for (const type of [text ? "keyDown" : "rawKeyDown", "keyUp"])
+    await command("Input.dispatchKeyEvent", {
+      type,
+      key,
+      code,
+      windowsVirtualKeyCode: virtualKey,
+      ...(type === "keyDown" ? { text } : {}),
+    });
 }
 async function point(id) {
   return evaluate((id) => {
@@ -335,6 +344,15 @@ try {
     await evaluate('modal="";openMap(0);souvenirWorld=5;modal="souvenir"');
     await screenshot("restoration-postcard");
   }
+  await evaluate(
+    'modal="";mode=3;chosen=2;hero=0;go("select");render();document.querySelector("[data-action=seed]").focus()',
+  );
+  await key("Enter", "Enter");
+  await ready('modal==="seed"');
+  await key("0", "Digit0");
+  assert.match(await evaluate("screenDescription()"), /Seed 0\./);
+  await key("Enter", "Enter");
+  await ready('modal==="" && seed===0');
   assert.deepEqual(errors, []);
   console.log(
     "All 40 three-star routes, campaign unlocks, mobile controls, resize and final-shot replay passed.",

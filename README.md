@@ -17,16 +17,16 @@ Each lit peg scores once per shot. Green diamonds release your performer’s pow
 
 ## Controls
 
-| Input        | Action                                                                      |
-| ------------ | --------------------------------------------------------------------------- |
-| Mouse        | Move to aim, click to fire.                                                 |
-| Touch or pen | Drag to aim, lift, then tap **Fire**.                                       |
-| Left / Right | Adjust aim. Hold **Shift** for smaller turns.                               |
-| Space        | Fire.                                                                       |
-| F            | Toggle double speed for the current shot.                                   |
-| I            | Read the aim angle and predicted contacts, including Pip’s extended sight.  |
-| M            | Toggle sound. Music and effects also have independent switches and volumes. |
-| Escape / R   | Pause or return / open restart confirmation.                                |
+| Input        | Action                                                                            |
+| ------------ | --------------------------------------------------------------------------------- |
+| Mouse        | Move to aim, hold **Shift** to fine-tune, click to fire.                          |
+| Touch or pen | Drag to aim, lift, then tap **Fire**. Hold still and slide sideways for fine aim. |
+| Left / Right | Adjust aim. Hold **Shift** for smaller turns.                                     |
+| Space        | Fire.                                                                             |
+| F            | Toggle double speed for the current shot.                                         |
+| I            | Read the aim angle and predicted contacts, including Pip’s extended sight.        |
+| M            | Toggle sound. Music and effects also have independent switches and volumes.       |
+| Escape / R   | Pause or return / open restart confirmation.                                      |
 
 Progress and settings save in this browser. Adventure resumes the next unfinished mission after its last settled shot. The gear opens graphics quality, reduced motion, high-contrast aim and power-symbol settings.
 

@@ -192,6 +192,14 @@ try {
   await touch("touchEnd");
   assert.notEqual(await evaluate("game.angle"), initial);
   assert.equal(await evaluate("game.shots"), 0);
+  await touch("touchStart", { x: 180, y: 365 });
+  await ready("finger?.fineAngle !== undefined");
+  const fineStart = await evaluate("game.angle");
+  await touch("touchMove", { x: 216, y: 345 });
+  const correction = (await evaluate("game.angle")) - fineStart;
+  assert.ok(correction > 0.03 && correction < 0.045);
+  await touch("touchEnd");
+  assert.equal(await evaluate("game.shots"), 0);
   await touch("touchStart", await point("fire"));
   await touch("touchEnd");
   assert.equal(await evaluate("game.shots"), 1);

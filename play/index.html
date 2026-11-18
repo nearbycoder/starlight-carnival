@@ -43,6 +43,8 @@
       }
       canvas.play {
         touch-action: none;
+        user-select: none;
+        -webkit-touch-callout: none;
       }
       canvas.in-settings {
         touch-action: none;
@@ -8303,12 +8305,21 @@
           !g.active &&
           !encore &&
           !g.finished &&
-          (aimHeld || g.time < (g.dialUntil || 0))
+          (aimHeld ||
+            aimFine ||
+            finger?.fineAngle !== undefined ||
+            g.time < (g.dialUntil || 0))
         ) {
           const dir = g.angle < 0 ? -1 : 1,
-            cx = 300 - dir * 66;
-          rect(cx - 37, 38, 74, 22, "#1a373bee", "#ba9d70", 1, 10);
-          txt(bearingText(g), cx, 49, 14, cream, cond, 700, "center");
+            cx = 300 - dir * 73;
+          if (aimFine || finger?.fineAngle !== undefined) {
+            rect(cx - 46, 29, 92, 35, "#183c42f5", gold, 1.4, 8);
+            label("FINE AIM", cx, 38, 9, gold, "center", 1.2);
+            txt(bearingText(g), cx, 53, 15, cream, cond, 700, "center");
+          } else {
+            rect(cx - 37, 38, 74, 22, "#1a373bee", "#ba9d70", 1, 10);
+            txt(bearingText(g), cx, 49, 14, cream, cond, 700, "center");
+          }
           for (let i = -4; i <= 4; i++) {
             const a = (i * pi) / 12;
             line(
@@ -10340,12 +10351,12 @@
       }
 
       const controlNotes = [
-        ["Mouse", "Move to aim. Click to launch."],
+        ["Mouse", "Move to aim. Hold Shift to fine-tune. Click to fire."],
         ["Keyboard", "Aim with ← or → and fire with Space."],
         ["Fine aim", "Hold Shift with an arrow for a smaller turn."],
-        ["Touch", "Drag to aim. Lift, then tap Fire."],
+        ["Touch", "Drag to aim. Hold, then slide for fine aim. Tap Fire."],
         ["Shot speed", "Tap 2× or press F during a shot."],
-        ["Aim readout", "Press I to hear the angle and predicted contacts."],
+        ["Aim readout", "Press I to read the angle and predicted contacts."],
         ["Intermission", "Escape pauses. R asks to restart. M toggles sound."],
       ];
       let guideReturn = "",
@@ -11352,14 +11363,29 @@
               p.x >= r.x && p.x <= r.x + r.w && p.y >= r.y && p.y <= r.y + r.h,
           );
       }
-      function aim(p) {
-        let { x, y, s } = boardBox;
-        game.dialUntil = 0;
-        game.angle = clamp(
-          Math.atan2((p.x - x) / s - 300, (p.y - y) / s - 35),
-          -1.34,
-          1.34,
-        );
+      const fineRadiansPerPixel = 0.0011;
+      let mouseAimX = null;
+      function aim(p, event) {
+        const mouse = event.pointerType === "mouse";
+        if (mouse && event.shiftKey) {
+          aimFine = true;
+          if (mouseAimX !== null)
+            game.angle = clamp(
+              game.angle + (p.x - mouseAimX) * scale * fineRadiansPerPixel,
+              -1.34,
+              1.34,
+            );
+          game.dialUntil = game.time + 1.8;
+        } else {
+          const { x, y, s } = boardBox;
+          game.angle = clamp(
+            Math.atan2((p.x - x) / s - 300, (p.y - y) / s - 35),
+            -1.34,
+            1.34,
+          );
+          game.dialUntil = 0;
+        }
+        mouseAimX = mouse ? p.x : null;
       }
       let finger = null,
         aimHeld = 0,
@@ -11368,6 +11394,8 @@
       function stopAiming() {
         aimHeld = 0;
         aimFine = false;
+        if (finger?.aimFor) finger = null;
+        mouseAimX = null;
       }
       function dragVolume(p) {
         const r = regions.find((item) => item.id === finger?.id);
@@ -11439,7 +11467,31 @@
           p.y >= boardBox.y &&
           p.y < boardBox.y + 650 * boardBox.s
         ) {
-          if (!game.active) aim(p);
+          if (!game.active) {
+            aim(p, e);
+            if (directPointer && !game.finished) {
+              const held = finger;
+              held.aimFor = game;
+              setTimeout(() => {
+                if (
+                  finger !== held ||
+                  held.drag ||
+                  game !== held.aimFor ||
+                  game.active ||
+                  game.finished ||
+                  modal ||
+                  screen !== "play"
+                )
+                  return;
+                held.fineAngle = game.angle;
+                game.dialUntil = game.time + 1.8;
+                announce(
+                  game,
+                  "Fine aim. Slide left or right, then lift and tap Fire.",
+                );
+              }, 360);
+            }
+          }
           if (e.pointerType === "mouse") fire();
         }
       };
@@ -11455,6 +11507,15 @@
             : "default";
         if (finger && Math.hypot(p.x - finger.x, p.y - finger.y) > 6)
           finger.drag = true;
+        if (finger?.fineAngle !== undefined && !game.active && !modal) {
+          game.angle = clamp(
+            finger.fineAngle + (p.x - finger.x) * scale * fineRadiansPerPixel,
+            -1.34,
+            1.34,
+          );
+          game.dialUntil = game.time + 1.8;
+          return;
+        }
         if (finger?.slider) {
           dragVolume(p);
           return;
@@ -11488,7 +11549,7 @@
           p.y > boardBox.y &&
           p.y < boardBox.y + BH * boardBox.s
         )
-          aim(p);
+          aim(p, e);
       };
       cv.onpointerup = (e) => {
         if (!finger || e.pointerId !== finger.pointerId) return;

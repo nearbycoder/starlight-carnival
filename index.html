@@ -27,8 +27,8 @@
       href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&family=DM+Sans:wght@400;500;600;700&family=Rye&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="./assets/midway.css?v=entrance-2" />
-    <script defer src="./assets/midway.js?v=entrance-2"></script>
+    <link rel="stylesheet" href="./assets/midway.css?v=encore-1" />
+    <script defer src="./assets/midway.js?v=encore-1"></script>
   </head>
 
   <body>
@@ -62,7 +62,15 @@
                 ><span id="adventure-label">Play Adventure</span
                 ><kbd aria-hidden="true">Enter ↵</kbd></a
               >
-              <small id="progress">40 missions <b>✦</b> 8 worlds</small>
+              <div class="showtimes">
+                <small id="progress">40 missions <b>✦</b> 8 worlds</small>
+                <a
+                  id="watch-film"
+                  href="./assets/midway/opening-night.mp4"
+                  aria-haspopup="dialog"
+                  ><span aria-hidden="true">▷</span> Watch trailer</a
+                >
+              </div>
             </div>
           </div>
           <a
@@ -116,7 +124,8 @@
             >
           </nav>
           <div class="sill">
-            <span>Free browser game</span
+            <a href="./play/index.html" download="Starlight-Carnival.html"
+              >Download the game ↓</a
             ><a href="https://github.com/nearbycoder/starlight-carnival"
               >Source on GitHub ↗</a
             >
@@ -166,7 +175,10 @@
                 height="88"
                 alt=""
               /><span>Score Attack</span>
-              <p>Take six pearls onto one board and chase your local best.</p>
+              <p>
+                Start with six pearls. Earn more through play and chase the
+                board’s local top five.
+              </p>
               <strong>Chase a score ↗</strong></a
             >
             <a href="./play/index.html?mode=seeded" style="--stripe: #9b7137"
@@ -604,17 +616,32 @@
               <div class="frame-top">
                 <span>Clockwork Arcade</span><span>World 03</span>
               </div>
-              <img
-                src="./assets/midway/multiball.webp"
-                width="1080"
-                height="675"
-                loading="lazy"
-                alt="Three glowing pearls fall through the clockwork board after Tiko activates Split Spark."
-              />
+              <video
+                controls
+                playsinline
+                preload="none"
+                data-poster="./assets/midway/multiball.webp"
+                width="1152"
+                height="720"
+                aria-label="A complete Twin Engines shot with Tiko"
+              >
+                <source
+                  src="./assets/midway/twin-engines.mp4"
+                  type="video/mp4"
+                />
+                <track
+                  kind="captions"
+                  src="./assets/midway/twin-engines.vtt"
+                  srclang="en"
+                  label="English"
+                />
+                <a href="./assets/midway/twin-engines.mp4">Watch the shot</a>
+              </video>
               <figcaption>
-                <span>Tiko’s Split Spark</span
-                ><a href="./play/index.html?mode=free-play&amp;world=3"
-                  >Try this world ↗</a
+                <span>Tiko’s Split Spark</span>
+                <a
+                  href="./play/index.html?mode=free-play&amp;mission=13&amp;performer=tiko"
+                  >Play Twin Engines ↗</a
                 >
               </figcaption>
             </figure>
@@ -624,12 +651,15 @@
             <p>
               <b>Mouse</b> Move to aim and click to fire. <b>Keyboard</b> Use
               the arrow keys to aim, Shift for fine adjustments and Space to
-              fire. <b>Touch</b> Drag to aim, then tap Fire.
+              fire. Press I to read your aim and F to follow a shot at double
+              speed. <b>Touch</b> Drag to aim, then tap Fire.
             </p>
             <p>
-              Escape pauses the game. Open the gear for graphics quality,
-              high-contrast aim, reduced motion and separate music and effects
-              volumes. Campaign progress and records save in this browser.
+              Escape pauses the game. M toggles sound. Open the gear for
+              graphics quality, high-contrast aim, reduced motion and separate
+              music and effects volumes. Adventure saves after each settled
+              shot. Select the score during play to see where your points came
+              from.
             </p>
           </details>
           <a class="guide-play" href="./play/index.html?mode=adventure"
@@ -638,5 +668,40 @@
         </div>
       </section>
     </main>
+    <dialog id="screening" aria-labelledby="screening-title">
+      <header class="screening-head">
+        <h2 id="screening-title">Opening Night</h2>
+        <button
+          type="button"
+          id="close-film"
+          autofocus
+          aria-label="Close trailer"
+        >
+          Close <span aria-hidden="true">×</span>
+        </button>
+      </header>
+      <video
+        id="trailer"
+        controls
+        playsinline
+        preload="none"
+        data-poster="./assets/midway/opening-night.webp"
+        width="1152"
+        height="720"
+        aria-label="Starlight Carnival gameplay trailer"
+      >
+        <source src="./assets/midway/opening-night.mp4" type="video/mp4" />
+        <track
+          kind="captions"
+          src="./assets/midway/opening-night.vtt"
+          srclang="en"
+          label="English"
+        />
+      </video>
+      <footer>
+        <span>Eight performers on the midway</span
+        ><a href="./play/index.html?mode=adventure">Play Adventure ↗</a>
+      </footer>
+    </dialog>
   </body>
 </html>

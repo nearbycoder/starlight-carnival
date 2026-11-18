@@ -667,7 +667,9 @@ h2:focus {
   color: #dbbf89;
   font-size: 11px;
 }
-.game-card > img {
+.game-card > video {
+  display: block;
+  background: #172b30;
   width: 100%;
   height: auto;
 }
@@ -965,5 +967,91 @@ body[data-room] .cabinet {
 @media (prefers-reduced-motion: reduce) {
   body[data-room] .cabinet {
     animation: none;
+  }
+}
+
+.showtimes {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 3px 14px;
+  margin-top: 15px;
+}
+.showtimes #progress {
+  margin: 0;
+}
+#watch-film {
+  color: #ffe1a5;
+  font: 700 16px var(--cond);
+  text-underline-offset: 3px;
+  white-space: nowrap;
+  padding: 3px 2px;
+}
+#watch-film span {
+  font-size: 0.78em;
+}
+#screening {
+  margin: auto;
+  padding: 0;
+  width: min(920px, 94vw, calc((100dvh - 105px) * 1.6));
+  max-height: 96dvh;
+  color: var(--cream);
+  background: #193638 url(midway/stock.webp);
+  border: 3px double #c7a46a;
+  border-radius: 6px;
+  box-shadow: 0 17px 80px #07191cd9;
+}
+#screening::backdrop {
+  background: #07171bed;
+}
+#screening video {
+  display: block;
+  width: 100%;
+  height: auto;
+  background: #112b31;
+}
+.screening-head,
+#screening footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 16px;
+}
+.screening-head h2 {
+  margin: 0;
+  font: 400 clamp(17px, 3.2vw, 25px) var(--display);
+  color: #f6e0b3;
+}
+.screening-head button {
+  color: #fae7c2;
+  font: 600 16px var(--cond);
+  background: #28494c;
+  border: 1px solid #a78c64;
+  border-radius: 20px;
+  padding: 5px 11px;
+  cursor: pointer;
+}
+#screening footer {
+  border-top: 1px solid #b29161;
+  color: #dccba8;
+  font: 600 15px var(--cond);
+}
+#screening footer a {
+  color: #f5cf81;
+  text-underline-offset: 3px;
+}
+@media (max-width: 480px) {
+  .showtimes {
+    margin-top: 10px;
+    gap: 0 9px;
+  }
+  #watch-film {
+    font-size: 14px;
+  }
+  .screening-head,
+  #screening footer {
+    padding: 8px 10px;
   }
 }

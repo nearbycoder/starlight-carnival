@@ -96,6 +96,7 @@
         sans = '"DM Sans",Arial,sans-serif';
       let W,
         H,
+        stageSized = false,
         scale,
         mobile,
         screen = "title",
@@ -9110,7 +9111,10 @@
         stageAtmosphere(g);
         const usableH = H - (encore ? 80 + safeHud.bottom : 0);
         const tightEdges = W - (usableH * BV) / BH < 210;
-        const s = Math.min(W / BV, (usableH - (tightEdges ? 106 : 8)) / BH);
+        const s = Math.min(
+          W / BV,
+          Math.max(1, usableH - (tightEdges ? 106 : 8)) / BH,
+        );
         const width = BV * s,
           height = BH * s;
         const x = (W - width) / 2,
@@ -10908,6 +10912,11 @@
         window.scrollTo(0, 0);
       }
       function resize() {
+        // A game portal can mount or replace its frame at zero size.
+        // Resume the same shot when the host gives the stage its dimensions.
+        stageSized = innerWidth > 0 && innerHeight > 0;
+        last = 0;
+        if (!stageSized) return;
         mobile = innerWidth < 740 && innerHeight > innerWidth * 0.8;
         W = mobile
           ? Math.min(520, Math.max(360, innerWidth))
@@ -10941,7 +10950,6 @@
                 : Math.max(380, innerHeight / scale);
         H = Math.max(min, innerHeight / scale);
         sizeCanvas();
-        last = 0;
       }
       function sizeCanvas() {
         trimArtwork();
@@ -11109,6 +11117,7 @@
         return "Starlight Carnival. Restore the eight attractions in Adventure or choose any mission in Free Play.";
       }
       function render() {
+        if (!stageSized) return;
         cv.classList.toggle("in-settings", modal === "settings");
         c.setTransform(cv.width / W, 0, 0, cv.height / H, 0, 0);
         regions = [];
@@ -11267,7 +11276,7 @@
       function loop(ms) {
         let elapsed = last ? Math.min(0.1, (ms - last) / 1000) : 0;
         last = ms;
-        if (!document.hidden) {
+        if (!document.hidden && stageSized) {
           playPendingNotes();
           if (!save.reduced) clock += elapsed;
           if (

@@ -353,6 +353,25 @@ try {
   assert.match(await evaluate("screenDescription()"), /Seed 0\./);
   await key("Enter", "Enter");
   await ready('modal==="" && seed===0');
+  await evaluate(() => {
+    const frame = document.createElement("iframe");
+    frame.id = "portal-test";
+    frame.style.cssText = "position:fixed;inset:0;border:0;width:0;height:0";
+    frame.srcdoc = document.documentElement.outerHTML;
+    document.body.append(frame);
+  });
+  await ready('typeof frames[0]?.start==="function"');
+  await evaluate("frames[0].start(false);frames[0].render()");
+  await delay(80);
+  await evaluate(() => {
+    const frame = document.getElementById("portal-test");
+    frame.style.width = "700px";
+    frame.style.height = "500px";
+  });
+  await ready(
+    'frames[0].document.querySelector("[data-action=fire]") && frames[0].eval("game.time>0")',
+  );
+  await evaluate('document.getElementById("portal-test").remove()');
   assert.deepEqual(errors, []);
   console.log(
     "All 40 three-star routes, campaign unlocks, mobile controls, resize and final-shot replay passed.",

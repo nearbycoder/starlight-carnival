@@ -209,6 +209,11 @@ test("the six-ball scorebook keeps five real runs per mission across tabs and is
     assert.ok(g.finished);
     assert.equal(g.previousBest, previous);
     assert.equal(g.record, g.score > previous);
+    assert.match(
+      a.screenDescription(),
+      /Local best \d+\. Best shot \d+ points\. Best chain/,
+    );
+    assert.doesNotMatch(a.screenDescription(), /stars this run/);
     runs.push({ id: g.run, score: g.score });
   }
   const a = loadGame(storage);
@@ -232,6 +237,31 @@ test("the six-ball scorebook keeps five real runs per mission across tabs and is
   const loaded = loadGame(storage);
   assert.deepEqual(loaded.save.ranks, a.save.ranks);
   assert.equal(loaded.resumeTicket(), null);
+});
+
+test("each pane of the Last Lantern lights its own part of the midway", () => {
+  const a = loadGame();
+  for (const order of [
+    [0, 2, 1],
+    [2, 1, 0],
+  ]) {
+    const g = a.fresh(39, 7, 0);
+    a.shoot(g);
+    let mask = 0;
+    assert.equal(a.litLanternPanes(g), mask);
+    for (const pane of order) {
+      const suns = g.p.filter(
+        (q) => q.type === "o" && a.lanternPane(q) === pane,
+      );
+      assert.ok(suns.length);
+      for (const sun of suns.slice(0, -1)) a.hit(g, sun);
+      assert.equal(a.litLanternPanes(g), mask);
+      a.hit(g, suns.at(-1));
+      mask |= 1 << pane;
+      assert.equal(a.litLanternPanes(g), mask);
+      assert.equal(g.final, mask === 7);
+    }
+  }
 });
 
 test("formation objectives start over on launch and retain the best single shot", () => {

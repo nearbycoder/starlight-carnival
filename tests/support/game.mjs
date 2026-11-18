@@ -48,6 +48,7 @@ const factory = compileFunction(
     powerStatus, releasePearl, hit, addScore, basketW, bucket, vineY,
     finish, activate, collision, flight, missionMedals, runMedals,
     medalCount, goalMet, objectiveValue, resumeTicket, challengeLink,
+    screenDescription, lanternPane, litLanternPanes,
     readSave, persist, unlocked, assignments, goals, ballsStart,
     optional, titles, powers, DT, save,
     enableProgress() { quiet = false; },

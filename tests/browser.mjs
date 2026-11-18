@@ -151,6 +151,7 @@ try {
 
   await key("Enter", "Enter");
   await ready('screen==="play" && game.n===0');
+  await ready('document.querySelector("[data-action=fire]") !== null');
   await key("i", "KeyI");
   assert.match(
     await evaluate('document.querySelector("#announcer").textContent'),
@@ -271,6 +272,8 @@ try {
             if (g.h === 6 && g.power && g.balls.some((b) => b.y > 450))
               remember("power-7");
             if (g.h === 7 && g.linked.length >= 3) remember("power-8");
+            if (g.n === 39 && !g.final && litLanternPanes(g))
+              remember("lantern-rekindled");
             if (
               g.catchAt &&
               g.time - g.catchAt > 0.08 &&
@@ -305,7 +308,7 @@ try {
   await screenshot("score-receipt");
   if (capture) {
     const names = await evaluate("[...captured.keys()]");
-    assert.equal(names.length, 11);
+    assert.equal(names.length, 12);
     for (const name of names) {
       await evaluate((name) => {
         const frame = captured.get(name);

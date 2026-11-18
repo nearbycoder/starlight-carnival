@@ -1864,6 +1864,16 @@
           Math.min(lit, optional[g.n][1]),
         );
       }
+      function lanternPane(peg) {
+        return clamp(Math.floor((peg.by - 95) / 155), 0, 2);
+      }
+      function litLanternPanes(g) {
+        let lit = 7;
+        for (const peg of g.p)
+          if (peg.type === "o" && !peg.hit && !peg.gone)
+            lit &= ~(1 << lanternPane(peg));
+        return lit;
+      }
       function formationHit(g, peg, ball) {
         switch (g.n) {
           case 1:
@@ -1885,8 +1895,7 @@
             markFormation(g, Math.min(2, Math.floor(peg.id / 17)));
             break;
           case 39:
-            if (peg.type === "o")
-              markFormation(g, clamp(Math.floor((peg.by - 95) / 155), 0, 2));
+            if (peg.type === "o") markFormation(g, lanternPane(peg));
             break;
         }
       }
@@ -2639,10 +2648,10 @@
           (ticket ? "Resuming " : "") +
             titles[game.n] +
             ". " +
-            remaining(game) +
-            " suns, " +
-            game.stock +
-            " pearls.",
+            sunCount(game) +
+            ", " +
+            pearlCount(game) +
+            ".",
         );
       }
       function remaining(g) {
@@ -2650,6 +2659,15 @@
           (n, q) => n + (q.type === "o" && !q.hit && !q.gone),
           0,
         );
+      }
+      function sunCount(g) {
+        const count = remaining(g);
+        return count + (count === 1 ? " sun" : " suns");
+      }
+      function pearlCount(g) {
+        return g.unlimited
+          ? "unlimited practice pearls"
+          : g.stock + (g.stock === 1 ? " pearl" : " pearls");
       }
       const quips = [
         [
@@ -3145,6 +3163,23 @@
         if (q.type === "o") {
           const left = remaining(g);
           g.mult = 1 + Math.floor(((g.initial - left) * 4) / g.initial);
+          if (g.n === 39 && left) {
+            const pane = lanternPane(q);
+            if (litLanternPanes(g) & (1 << pane)) {
+              call(
+                g,
+                [
+                  "Upper pane alight!",
+                  "Middle pane alight!",
+                  "Lower pane alight!",
+                ][pane],
+                0,
+              );
+              const key = worldRoots[7] + [12, 16, 19][pane];
+              note(key, 0.32, "sine", 0.08, 0.1, true);
+              note(key + 7, 0.46, "sine", 0.07, 0.24, true);
+            }
+          }
           if (g.linked.includes(q.id)) {
             let a = g.linked;
             g.linked = [];
@@ -3321,23 +3356,29 @@
           collisions++;
           const passThrough =
             q && !q.perm && !q.hit && b.pierce > 0 && !b.pierced?.has(q.id);
-          if (b.contactMarks) {
-            if (!b.contactMarks.length)
-              b.firstSurface = q
-                ? q.perm
-                  ? q.hx
-                    ? "a permanent barrier"
-                    : "a bumper"
-                  : {
-                      b: "a blue peg",
-                      o: "an orange sun",
-                      s: "the bonus star",
-                      g: "a green diamond",
-                    }[q.type]
-                : nx
-                  ? "a side rail"
+          if (b.contactMarks) b.contactMarks.push([b.x, b.y, nx, ny]);
+          if (b.contactNames) {
+            const name = q
+              ? q.perm
+                ? q.hx
+                  ? "a permanent barrier"
+                  : g.n === 29
+                    ? "the gong"
+                    : g.n === 7
+                      ? "the pendulum"
+                      : "a bumper"
+                : {
+                    b: "a blue peg",
+                    o: "an orange sun",
+                    s: "the bonus star",
+                    g: "a green diamond",
+                  }[q.type]
+              : nx > 0
+                ? "the left rail"
+                : nx < 0
+                  ? "the right rail"
                   : "the ceiling";
-            b.contactMarks.push([b.x, b.y, nx, ny]);
+            b.contactNames.push(name);
           }
           if (!ghost) {
             if (q) {
@@ -3444,6 +3485,7 @@
           };
         const moving = [...sim.p, ...sim.o].filter((q) => q.mot);
         b.contactMarks = marks;
+        b.contactNames = [];
         if (g.h === 5 && g.power) b.pierce = 6;
         for (let i = 0; i < (ext ? 520 : 210); i++) {
           for (const q of moving) moveObj(q, g.time + (i + 1) * DT, DT);
@@ -3458,7 +3500,7 @@
         return {
           pts,
           marks: marks.slice(0, ext ? 3 : 1),
-          first: b.firstSurface,
+          contacts: b.contactNames.slice(0, ext ? 3 : 1),
         };
       }
       function finish(g) {
@@ -3545,10 +3587,10 @@
             ", " +
             g.shotScore.toLocaleString() +
             " points. " +
-            remaining(g) +
-            " suns left. " +
-            g.stock +
-            " pearls.",
+            sunCount(g) +
+            " left, " +
+            pearlCount(g) +
+            ".",
         );
       }
       // Try gentle impulses against the local geometry. Probes can neither
@@ -7787,13 +7829,9 @@
           path(glass, "#73969721", "#cfb78d", 2.4);
           c.save();
           c.clip(new Path2D(glass));
+          const panes = litLanternPanes(g);
           for (let section = 0; section < 3; section++) {
-            const lit = !g.p.some(
-              (q) =>
-                q.type === "o" &&
-                !q.hit &&
-                Math.min(2, Math.floor((q.by - 95) / 155)) === section,
-            );
+            const lit = panes & (1 << section);
             const yy = section === 0 ? 198 : section === 1 ? 255 : 408,
               hh = section === 0 ? 57 : section === 1 ? 153 : 101;
             if (lit)
@@ -8428,28 +8466,36 @@
         });
       }
       // Eight separate sets on the horizon, in the order their lamps came back on.
-      function litMidway() {
-        return cached("midway-opening-night", 1440, 260, () => {
+      function litMidway(panes) {
+        // The lantern's upper, middle and lower panes feed three banks of midway lights.
+        const powerAt = (x) => !!(panes & (x < 540 ? 1 : x < 900 ? 2 : 4));
+        return cached("midway-opening-night-" + panes, 1440, 260, () => {
           for (let j = 0; j < 8; j++) {
             const x = 93 + j * 180,
               depth = (j % 3) * 10,
               base = 195 + depth;
-            const glow = c.createRadialGradient(
-              x,
-              base - 58,
-              0,
-              x,
-              base - 58,
-              102,
-            );
-            glow.addColorStop(
-              0,
-              ["#f5c47d4c", "#f3dab54a", "#a5dfc83d", "#f6b78f54"][j % 4],
-            );
-            glow.addColorStop(0.7, "#efc37415");
-            glow.addColorStop(1, "#efc37400");
-            rect(x - 104, base - 162, 208, 208, glow);
-            local(x, base, 0.77 + depth * 0.003, () => attractionArt(j, true));
+            const lit = powerAt(x);
+            if (lit) {
+              const glow = c.createRadialGradient(
+                x,
+                base - 58,
+                0,
+                x,
+                base - 58,
+                102,
+              );
+              glow.addColorStop(
+                0,
+                ["#f5c47d4c", "#f3dab54a", "#a5dfc83d", "#f6b78f54"][j % 4],
+              );
+              glow.addColorStop(0.7, "#efc37415");
+              glow.addColorStop(1, "#efc37400");
+              rect(x - 104, base - 162, 208, 208, glow);
+            }
+            c.save();
+            c.globalAlpha = lit ? 1 : 0.31;
+            local(x, base, 0.77 + depth * 0.003, () => attractionArt(j, lit));
+            c.restore();
           }
           path(
             "M0 213Q180 201 369 220T722 217T1078 212T1440 215V260H0Z",
@@ -8475,17 +8521,17 @@
                 (1 - k) ** 2 * (yy - 18) +
                 2 * k * (1 - k) * (yy + 10) +
                 k * k * end;
-              brassBulb(x + k * 126, h + 1, 1.9, true);
+              brassBulb(x + k * 126, h + 1, 1.9, powerAt(x + k * 126));
             }
           }
         });
       }
-      function drawMidwayHorizon(bottom, opacity) {
-        const scale = Math.max(W / 1440, Math.min(0.7, H / 850));
+      function drawMidwayHorizon(bottom, opacity, panes = 7) {
+        const scale = W / 1440;
         c.save();
         c.globalAlpha = opacity;
         c.drawImage(
-          litMidway(),
+          litMidway(panes),
           (W - 1440 * scale) / 2,
           bottom - 260 * scale,
           1440 * scale,
@@ -8635,11 +8681,16 @@
           },
         );
         c.drawImage(scene, 0, 0, W, H);
-        if (g.final && g.n === 39) {
-          const fade = save.reduced
-            ? 1
-            : clamp((g.time - g.finalAt) / 0.54, 0, 1);
-          drawMidwayHorizon(H * 0.96, 0.82 * fade);
+        if (g.n === 39) {
+          const panes = litLanternPanes(g);
+          if (panes) {
+            const finale = g.final
+              ? save.reduced
+                ? 1
+                : clamp((g.time - g.finalAt) / 0.54, 0, 1)
+              : 0;
+            drawMidwayHorizon(H * 0.96, 0.58 + finale * 0.24, panes);
+          }
         }
       }
 
@@ -8939,12 +8990,12 @@
             rect(2, -7, 4, 14, cream, null, 0, 1);
           },
         );
-        if (compact || separateFireButton() || g.active) {
+        if (!g.final && !g.finished) {
           const fireW = compact ? 53 : 75,
             fx = W - edge - 96 - fireW;
           if (!g.active)
             ctl("fire", "Fire", fx, bottom - 40, fireW, fire, true, 38);
-          else if (!g.final) {
+          else {
             const hot = button(
               "pace",
               fx,
@@ -9730,7 +9781,7 @@
               " points below your best";
         }
         if (g.m === 3 && !g.final)
-          detail = names[g.h] + "   ·   " + remaining(g) + " suns left";
+          detail = names[g.h] + "   ·   " + sunCount(g) + " left";
         txt(detail, mid, y + 246, 15, "#815735", cond, 700, "center", w - 32);
       }
       function challengeLink(g) {
@@ -10294,7 +10345,7 @@
         ["Fine aim", "Hold Shift with an arrow for a smaller turn."],
         ["Touch", "Drag to aim. Lift, then tap Fire."],
         ["Shot speed", "Tap 2× or press F during a shot."],
-        ["Aim readout", "Press I to read the angle and first contact."],
+        ["Aim readout", "Press I to hear the angle and predicted contacts."],
         ["Intermission", "Escape pauses. R asks to restart. M toggles sound."],
       ];
       let guideReturn = "",
@@ -10430,17 +10481,19 @@
       function readAim(g) {
         if (g !== game || g.active || g.finished || modal || screen !== "play")
           return;
-        const surface = preview(g).first;
+        const contacts = preview(g).contacts;
         announce(
           g,
           bearingText(g) +
             ". " +
-            (surface
-              ? "First contact with " + surface + "."
-              : "Clear path to the drain.") +
+            (contacts.length > 1
+              ? "Star Sight predicts " + contacts.join(", then ") + "."
+              : contacts.length
+                ? "First contact with " + contacts[0] + "."
+                : "Clear path to the drain.") +
             " " +
-            remaining(g) +
-            " suns left.",
+            sunCount(g) +
+            " left.",
         );
         g.dialUntil = g.time + 1.8;
       }
@@ -10915,24 +10968,28 @@
       const focusReturn = new Map();
       function screenDescription() {
         const g = game;
-        if (modal === "scorebook")
+        if (modal === "scorebook") {
+          const n = screen === "play" ? g.n : chosen;
+          const entries = save.ranks[n].map((run, i) => {
+            const name = run.id === "legacy" ? "Previous best" : names[run.h];
+            const detail =
+              run.id === "legacy"
+                ? ""
+                : " " +
+                  run.shots +
+                  " shots, best chain " +
+                  run.chain +
+                  "." +
+                  (run.clear ? " All suns lit." : "");
+            return i + 1 + ". " + name + ", " + run.score + " points." + detail;
+          });
           return (
             "Local scores for " +
-            titles[screen === "play" ? g.n : chosen] +
+            titles[n] +
             ". " +
-            save.ranks[screen === "play" ? g.n : chosen]
-              .map(
-                (run, i) =>
-                  i +
-                  1 +
-                  ". " +
-                  (names[run.h] || "Previous best") +
-                  ", " +
-                  run.score +
-                  " points.",
-              )
-              .join(" ")
+            (entries.join(" ") || "Finish a run to record your first score.")
           );
+        }
         if (modal === "receipt")
           return (
             titles[g.n] +
@@ -10947,19 +11004,39 @@
             g.score +
             " points."
           );
-        if (modal === "results")
-          return (
+        if (modal === "results") {
+          const summary =
             titles[g.n] +
             ". " +
             (g.final ? "All suns lit. " : "Out of pearls. ") +
             g.score +
-            " points. " +
-            medalCount(runMedals(g)) +
-            " stars this run. " +
+            " points. ";
+          if (g.m === 2)
+            return (
+              summary +
+              (g.record ? "New high score. " : "") +
+              "Local best " +
+              save.attack[g.n] +
+              ". Best shot " +
+              g.bestShot +
+              " points. Best chain " +
+              g.bestChain +
+              ". Pearls fired " +
+              g.shots +
+              "."
+            );
+          const stars = medalCount(runMedals(g));
+          return (
+            summary +
+            (g.m === 3 ? "Seed " + g.cs + ". " : "") +
+            stars +
+            (stars === 1 ? " star" : " stars") +
+            " this run." +
             (restoredShow(g)
-              ? restorationStories[Math.floor(g.n / 5)].join(" ")
+              ? " " + restorationStories[Math.floor(g.n / 5)].join(" ")
               : "")
           );
+        }
         if (modal === "souvenir")
           return (
             attractions[souvenirWorld] +
@@ -11000,15 +11077,15 @@
             ". " +
             modes[g.m] +
             ". " +
-            g.stock +
-            " pearls. " +
-            remaining(g) +
-            " suns. " +
+            pearlCount(g) +
+            ", " +
+            sunCount(g) +
+            ". " +
             g.score +
             " points. " +
             (modal === "pause"
               ? objective(g.n) + "."
-              : "Use the arrow keys to aim, Shift for precision, I for the predicted first contact and Space to launch.")
+              : "Use the arrow keys to aim, Shift for precision, I for the predicted contacts and Space to launch.")
           );
         if (screen === "map")
           return (

@@ -18,6 +18,7 @@ test("the dotted guide predicts actual contact with static and moving surfaces",
         a.shoot(g);
         const b = g.balls[0];
         b.contactMarks = [];
+        b.contactNames = [];
         for (
           let j = 0;
           j < (extended ? 520 : 210) &&
@@ -27,6 +28,10 @@ test("the dotted guide predicts actual contact with static and moving surfaces",
         )
           a.step(g, a.DT);
         const actual = b.contactMarks.slice(0, extended ? 3 : 1);
+        assert.deepEqual(
+          predicted.contacts,
+          b.contactNames.slice(0, actual.length),
+        );
         assert.equal(
           actual.length,
           predicted.marks.length,
